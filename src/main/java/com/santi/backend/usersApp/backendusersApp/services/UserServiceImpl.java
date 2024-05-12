@@ -1,5 +1,6 @@
 package com.santi.backend.usersApp.backendusersApp.services;
 
+import com.santi.backend.usersApp.backendusersApp.models.entities.CreateUserDTO;
 import com.santi.backend.usersApp.backendusersApp.models.entities.User;
 import com.santi.backend.usersApp.backendusersApp.models.entities.UserDTO;
 import com.santi.backend.usersApp.backendusersApp.repositories.UserRepository;
@@ -41,7 +42,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User save(User user) {
+    public User save(CreateUserDTO createUserDTO) {
+        User user = new User();
+        //mapeo el DTO a una entidad User (también se pueden usar librerías como MapStruct o ModelMapper):
+        user.setUsername(createUserDTO.getUsername());
+        user.setPassword(createUserDTO.getPassword());
+        user.setEmail(createUserDTO.getEmail());
+
         return repository.save(user);
     }
 
