@@ -6,12 +6,16 @@ import com.santi.backend.usersApp.backendusersApp.models.entities.User;
 import com.santi.backend.usersApp.backendusersApp.models.entities.UserDTO;
 import com.santi.backend.usersApp.backendusersApp.services.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -39,8 +43,13 @@ public class UserController {
         }
     }
 
+    //@Valid y BindingResult sirven para validar el objeto que se pasa por parámetro:
     @PostMapping
-    public ResponseEntity<User> create(@RequestBody CreateUserDTO createUserDTO) {
+    public ResponseEntity<?> create(@Valid @RequestBody CreateUserDTO createUserDTO, BindingResult result) {
+        if (result.hasErrors()) {
+            return validation(result);
+        }
+
         try {
             User userDB = service.create(createUserDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(userDB);
@@ -50,7 +59,11 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@RequestBody UpdateUserDTO updateUserDTO, @PathVariable Long id) {
+    public ResponseEntity<?> update(@Valid @RequestBody UpdateUserDTO updateUserDTO,
+                                    BindingResult result, @PathVariable Long id) {
+        if (result.hasErrors()) {
+            return validation(result);
+        }
 
         try {
             User userDB = service.update(updateUserDTO, id);
@@ -68,5 +81,14 @@ public class UserController {
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    private ResponseEntity<?> validation(BindingResult result) {
+        Map<String, String> errors = new HashMap<>();
+
+        result.getFieldErrors().forEach(err -> {
+            errors.put(err.getField(), "The field " + err.getField() + " " + err.getDefaultMessage());
+        });
+        return ResponseEntity.badRequest().body(errors);
     }
 }
