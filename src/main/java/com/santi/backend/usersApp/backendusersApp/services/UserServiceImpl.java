@@ -1,6 +1,7 @@
 package com.santi.backend.usersApp.backendusersApp.services;
 
 import com.santi.backend.usersApp.backendusersApp.models.entities.CreateUserDTO;
+import com.santi.backend.usersApp.backendusersApp.models.entities.UpdateUserDTO;
 import com.santi.backend.usersApp.backendusersApp.models.entities.User;
 import com.santi.backend.usersApp.backendusersApp.models.entities.UserDTO;
 import com.santi.backend.usersApp.backendusersApp.repositories.UserRepository;
@@ -30,19 +31,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDTO findById(Long id) {
-        final Optional<User> foundUser = repository.findById(id);
+    public User findById(Long id) {
+        User foundUser = repository.findById(id).orElse(null);
 
-        if (foundUser.isEmpty()) {
+        if (foundUser == null) {
             throw new EntityNotFoundException("User with id " + id + " was not found");
         }
-        final User userFromBD = foundUser.get(); //foundUser es de tipo Optional, necesitamos su valor
-        return new UserDTO(userFromBD.getUsername(), userFromBD.getEmail());
+
+        return foundUser;
     }
 
     @Override
     @Transactional
-    public User save(CreateUserDTO createUserDTO) {
+    public User create(CreateUserDTO createUserDTO) {
         User user = new User();
         //mapeo el DTO a una entidad User (también se pueden usar librerías como MapStruct o ModelMapper):
         user.setUsername(createUserDTO.getUsername());
@@ -54,7 +55,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public User save(User user) {
+        return repository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public User update(UpdateUserDTO updateUserDTO, Long id) {
+        User userDB = this.findById(id);
+
+        userDB.setUsername(updateUserDTO.getUsername());
+        userDB.setPassword(updateUserDTO.getPassword());
+
+        return this.save(userDB);
+    }
+
+    @Override
+    @Transactional
     public void remove(Long id) {
-        repository.deleteById(id);
+        User userDB = this.findById(id); //si no se encuentra el usuario, se lanza una excepción (ver findById)
+
+        repository.deleteById(userDB.getId());
     }
 }
